@@ -55,7 +55,7 @@ func ReplaceOneUpsert[T any](ctx context.Context, cllctn *mongo.Collection, fltr
 	return cllctn.ReplaceOne(ctx, fltr, ent, opts)
 }
 
-func getNFromCursor[T any](ctx context.Context, crsr *mongo.Cursor, n int64, ents []*T) ([]*T, error) {
+func GetNFromCursor[T any](ctx context.Context, crsr *mongo.Cursor, n int64, ents []*T) ([]*T, error) {
 	var (
 		ix  int64
 		err error
@@ -82,7 +82,7 @@ func RetrieveN[T any](ctx context.Context, cllctn *mongo.Collection, n int64, so
 		return nil, err
 	}
 	var ents []*T
-	ents, err = getNFromCursor(ctx, cursor, n, ents)
+	ents, err = GetNFromCursor(ctx, cursor, n, ents)
 	if err != nil {
 		return nil, err
 	}
