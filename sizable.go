@@ -28,7 +28,7 @@ func handleSingleResult[T any](sRslt *mongo.SingleResult, ent *T) error {
 	return nil
 }
 
-func FindOneAndReplaceUpsert[T any](ctx context.Context, cllctn *mongo.Collection, fltr bson.D, ent *T) (*T, error) {
+func FindOneAndReplaceUpsert[T any](ctx context.Context, cllctn *mongo.Collection, fltr bson.D, ent *T) error {
 	var (
 		err  error
 		opts *options.FindOneAndReplaceOptions
@@ -41,10 +41,10 @@ func FindOneAndReplaceUpsert[T any](ctx context.Context, cllctn *mongo.Collectio
 
 	err = handleSingleResult(rslt, ent)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return ent, nil
+	return nil
 }
 
 func ReplaceOneUpsert[T any](ctx context.Context, cllctn *mongo.Collection, fltr bson.D, ent *T) (*mongo.UpdateResult, error) {
@@ -52,7 +52,7 @@ func ReplaceOneUpsert[T any](ctx context.Context, cllctn *mongo.Collection, fltr
 	return cllctn.ReplaceOne(ctx, fltr, ent, opts)
 }
 
-func GetNFromCursor[T any](ctx context.Context, crsr *mongo.Cursor, n int64, ents []*T) ([]*T, error) {
+func GetNFromCursor[T any](ctx context.Context, crsr *mongo.Cursor, n int64, ents *[]*T) error {
 	var (
 		ix  int64
 		err error
@@ -61,15 +61,15 @@ func GetNFromCursor[T any](ctx context.Context, crsr *mongo.Cursor, n int64, ent
 	for ix = 0; ix < n; ix += 1 {
 		var ent T
 		if !crsr.Next(ctx) {
-			return ents, nil
+			return nil
 		}
 		err = crsr.Decode(&ent)
 		if err != nil {
-			return ents, err
+			return err
 		}
-		ents = append(ents, &ent)
+		*ents = append(*ents, &ent)
 	}
-	return ents, nil
+	return nil
 }
 
 func RetrieveN[T any](ctx context.Context, cllctn *mongo.Collection, n int64, sort bson.D) ([]*T, error) {
@@ -79,7 +79,7 @@ func RetrieveN[T any](ctx context.Context, cllctn *mongo.Collection, n int64, so
 		return nil, err
 	}
 	var ents []*T
-	ents, err = GetNFromCursor(ctx, cursor, n, ents)
+	err = GetNFromCursor(ctx, cursor, n, &ents)
 	if err != nil {
 		return nil, err
 	}
@@ -108,23 +108,23 @@ func InsertOne[T any](ctx context.Context, cllctn *mongo.Collection, ent *T) (pr
 	return insOneId, nil
 }
 
-func GetOne[T any](ctx context.Context, cllctn *mongo.Collection, fltr bson.D, ent *T) (*T, error) {
+func GetOne[T any](ctx context.Context, cllctn *mongo.Collection, fltr bson.D, ent *T) error {
 	var (
 		err         error
 		getByIdRslt *mongo.SingleResult
 	)
 
 	getByIdRslt = cllctn.FindOne(ctx, fltr)
-	err = handleSingleResult[T](getByIdRslt, ent)
+	err = getByIdRslt.Err()
 	if err != nil {
-		fmt.Println("err getting result")
-		return nil, err
+		return err
 	}
 
-	return ent, nil
+	err = handleSingleResult[T](getByIdRslt, ent)
+	return err
 }
 
-func FindByIds[T any](ctx context.Context, cllctn *mongo.Collection, ids []primitive.ObjectID, all []T) ([]T, error) {
+func FindByIds[T any](ctx context.Context, cllctn *mongo.Collection, ids []primitive.ObjectID, all *[]T) error {
 	var (
 		err          error
 		fndByIdsFltr bson.D
@@ -133,30 +133,30 @@ func FindByIds[T any](ctx context.Context, cllctn *mongo.Collection, ids []primi
 	fndByIdsFltr = bson.D{{"_id", bson.D{{"$in", ids}}}}
 	cursor, err := cllctn.Find(ctx, fndByIdsFltr)
 	if err != nil {
-		return all, err
+		return err
 	}
 
-	if err = cursor.All(ctx, &all); err != nil {
-		return all, err
+	if err = cursor.All(ctx, all); err != nil {
+		return err
 	}
 
-	return all, nil
+	return nil
 }
 
-func Find[T any](ctx context.Context, cllctn *mongo.Collection, fltr bson.D, all []T) ([]T, error) {
+func Find[T any](ctx context.Context, cllctn *mongo.Collection, fltr bson.D, all *[]T) error {
 	var (
 		err error
 	)
 
 	cursor, err := cllctn.Find(ctx, fltr)
 	if err != nil {
-		return all, err
+		return err
 	}
 	defer cursor.Close(ctx)
 
-	if err = cursor.All(ctx, &all); err != nil {
-		return all, err
+	if err = cursor.All(ctx, all); err != nil {
+		return err
 	}
 
-	return all, nil
+	return nil
 }
