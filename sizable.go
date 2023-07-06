@@ -28,21 +28,18 @@ func handleSingleResult[T any](sRslt *mongo.SingleResult, ent *T) error {
 	return nil
 }
 
-var (
-	fndRepUpsOpts *options.FindOneAndReplaceOptions
-	fndRepUpsRslt *mongo.SingleResult
-	fndRepUpsAftr = options.After
-)
-
 func FindOneAndReplaceUpsert[T any](ctx context.Context, cllctn *mongo.Collection, fltr bson.D, ent *T) (*T, error) {
 	var (
-		err error
+		err  error
+		opts *options.FindOneAndReplaceOptions
+		rslt *mongo.SingleResult
+		aftr = options.After
 	)
 
-	fndRepUpsOpts = &options.FindOneAndReplaceOptions{Upsert: &True, ReturnDocument: &fndRepUpsAftr}
-	fndRepUpsRslt = cllctn.FindOneAndReplace(ctx, fltr, ent, fndRepUpsOpts)
+	opts = &options.FindOneAndReplaceOptions{Upsert: &True, ReturnDocument: &aftr}
+	rslt = cllctn.FindOneAndReplace(ctx, fltr, ent, opts)
 
-	err = handleSingleResult(fndRepUpsRslt, ent)
+	err = handleSingleResult(rslt, ent)
 	if err != nil {
 		return nil, err
 	}
@@ -90,15 +87,12 @@ func RetrieveN[T any](ctx context.Context, cllctn *mongo.Collection, n int64, so
 	return ents, nil
 }
 
-var (
-	insOneRslt *mongo.InsertOneResult
-	insOneId   primitive.ObjectID
-)
-
 func InsertOne[T any](ctx context.Context, cllctn *mongo.Collection, ent *T) (primitive.ObjectID, error) {
 	var (
-		err error
-		ok  bool
+		err        error
+		ok         bool
+		insOneRslt *mongo.InsertOneResult
+		insOneId   primitive.ObjectID
 	)
 	insOneId = primitive.ObjectID{}
 
@@ -114,13 +108,10 @@ func InsertOne[T any](ctx context.Context, cllctn *mongo.Collection, ent *T) (pr
 	return insOneId, nil
 }
 
-var (
-	getByIdRslt *mongo.SingleResult
-)
-
 func GetOne[T any](ctx context.Context, cllctn *mongo.Collection, fltr bson.D, ent *T) (*T, error) {
 	var (
-		err error
+		err         error
+		getByIdRslt *mongo.SingleResult
 	)
 
 	getByIdRslt = cllctn.FindOne(ctx, fltr)
@@ -133,13 +124,10 @@ func GetOne[T any](ctx context.Context, cllctn *mongo.Collection, fltr bson.D, e
 	return ent, nil
 }
 
-var (
-	fndByIdsFltr bson.D
-)
-
 func FindByIds[T any](ctx context.Context, cllctn *mongo.Collection, ids []primitive.ObjectID, all []T) ([]T, error) {
 	var (
-		err error
+		err          error
+		fndByIdsFltr bson.D
 	)
 
 	fndByIdsFltr = bson.D{{"_id", bson.D{{"$in", ids}}}}
