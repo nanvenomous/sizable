@@ -124,6 +124,24 @@ func GetOne[T any](ctx context.Context, cllctn *mongo.Collection, fltr bson.D, e
 	return err
 }
 
+func DeleteOne(ctx context.Context, cllctn *mongo.Collection, fltr bson.D) error {
+	var (
+		err error
+		res *mongo.DeleteResult
+	)
+
+	res, err = cllctn.DeleteOne(ctx, fltr)
+	if err != nil {
+		return err
+	}
+
+	if res.DeletedCount == 0 {
+		return errors.New("Expected entities to be deleted, but none were.")
+	}
+
+	return nil
+}
+
 func FindByIds[T any](ctx context.Context, cllctn *mongo.Collection, ids []primitive.ObjectID, all *[]T) error {
 	var (
 		err          error
