@@ -52,12 +52,19 @@ func ReplaceOneUpsert[T any](ctx context.Context, cllctn *mongo.Collection, fltr
 	return cllctn.ReplaceOne(ctx, fltr, ent, opts)
 }
 
-func GetNFromCursor[T any](ctx context.Context, crsr *mongo.Cursor, n int64, ents *[]*T) error {
+func GetNFromCursor[T any](ctx context.Context, crsr *mongo.Cursor, n int64, page int64, ents *[]*T) error {
 	var (
 		ix  int64
 		err error
 	)
 	defer crsr.Close(ctx)
+
+	for i := 0; i < int(page*n); i++ {
+		if !crsr.Next(ctx) {
+			return nil
+		}
+	}
+
 	for ix = 0; ix < n; ix += 1 {
 		var ent T
 		if !crsr.Next(ctx) {
@@ -79,7 +86,7 @@ func RetrieveN[T any](ctx context.Context, cllctn *mongo.Collection, n int64, so
 		return nil, err
 	}
 	var ents []*T
-	err = GetNFromCursor(ctx, cursor, n, &ents)
+	err = GetNFromCursor(ctx, cursor, n, 0, &ents)
 	if err != nil {
 		return nil, err
 	}
