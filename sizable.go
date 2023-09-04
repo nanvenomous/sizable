@@ -143,6 +143,24 @@ func DeleteOne(ctx context.Context, cllctn *mongo.Collection, fltr bson.D) error
 	}
 
 	if res.DeletedCount == 0 {
+		return errors.New("Expected entity to be deleted, but none were.")
+	}
+
+	return nil
+}
+
+func DeleteMany(ctx context.Context, cllctn *mongo.Collection, fltr bson.D) error {
+	var (
+		err error
+		res *mongo.DeleteResult
+	)
+
+	res, err = cllctn.DeleteMany(ctx, fltr)
+	if err != nil {
+		return err
+	}
+
+	if res.DeletedCount == 0 {
 		return errors.New("Expected entities to be deleted, but none were.")
 	}
 

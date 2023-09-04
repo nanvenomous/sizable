@@ -16,21 +16,22 @@ import (
 type thing struct {
 	ID     primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
 	Number uint               `bson:"number" json:"number"`
+	User   string             `bson:"user" json:"user"`
 }
 
 var (
 	db         *mongo.Database
 	ctx        context.Context
 	nineThings = []thing{
-		{Number: 1},
-		{Number: 2},
-		{Number: 3},
-		{Number: 4},
-		{Number: 5},
-		{Number: 6},
-		{Number: 7},
-		{Number: 8},
-		{Number: 9},
+		{Number: 1, User: "jeff"},
+		{Number: 2, User: "jeff"},
+		{Number: 3, User: "jeff"},
+		{Number: 4, User: "jeff"},
+		{Number: 5, User: "tammy"},
+		{Number: 6, User: "tammy"},
+		{Number: 7, User: "tammy"},
+		{Number: 8, User: "tammy"},
+		{Number: 9, User: "tammy"},
 	}
 )
 
@@ -39,6 +40,24 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func TestDeleteAllWithCondition(t *testing.T) {
+	assert.Nil(t, db.Drop(ctx))
+	cllctn := db.Collection("things")
+
+	var (
+		err error
+		res *mongo.DeleteResult
+	)
+	for _, thg := range nineThings {
+		_, err = ReplaceOneUpsert(ctx, cllctn, bson.D{{"number", thg.Number}}, &thg)
+		assert.Nil(t, err)
+	}
+
+	res, err = cllctn.DeleteMany(ctx, bson.D{{"user", "jeff"}})
+	assert.Nil(t, err)
+	assert.Equal(t, int64(4), res.DeletedCount)
 }
 
 func TestGetNFromCursor(t *testing.T) {
